@@ -18,3 +18,17 @@ Files created:
 - `src/` - React source (App.jsx, main.jsx, styles)
 
 If you want TypeScript, routing, or additional features, tell me and I'll add them.
+
+Usage with a different CSV format
+--------------------------------
+
+If your CSV uses different column names, `SankeyChart` accepts props to map them. Example:
+
+```jsx
+import SankeyChart from './src/SankeyChart'
+
+// If your CSV columns are 'from', 'to', 'count'
+<SankeyChart csvPath={'/path/to/file.csv'} sourceKey={'from'} targetKey={'to'} valueKey={'count'} />
+```
+
+The component will read the headers you pass and build the Sankey accordingly.

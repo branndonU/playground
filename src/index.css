@@ -4,3 +4,7 @@ body { font-family: Inter, system-ui, Arial; background: linear-gradient(180deg,
 .app { padding: 3rem; }
 .card { margin-top: 1rem; }
 button { background: #7c3aed; color: white; border: none; padding: 0.6rem 1rem; border-radius: 6px }
+.sankey-tooltip { box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+
+.sankey-legend { background: rgba(255,255,255,0.03); padding: 8px; border-radius: 6px; color: var(--text); }
+.sankey-legend h4 { margin: 0 0 6px 0; font-size: 14px }
