@@ -1,0 +1,6 @@
+:root { --bg: #0f172a; --card: #0b1220; --text: #e6eef8 }
+html, body, #root { height: 100%; margin: 0 }
+body { font-family: Inter, system-ui, Arial; background: linear-gradient(180deg,#071023 0%,#0b1220 100%); color: var(--text) }
+.app { padding: 3rem; }
+.card { margin-top: 1rem; }
+button { background: #7c3aed; color: white; border: none; padding: 0.6rem 1rem; border-radius: 6px }
