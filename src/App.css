@@ -11,6 +11,18 @@
 h1 { margin: 0 0 0.5rem 0; color: var(--text) }
 p { margin: 0; opacity: 0.95; color: var(--text) }
 
+/* Classification banner shown at top */
+.classification-banner {
+	background: #b91c1c; /* red */
+	color: white;
+	text-align: center;
+	padding: 10px 14px;
+	border-radius: 6px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	margin-bottom: 12px;
+}
+
 /* Layout for main content: left about card and right content area */
 .main-grid {
 	display: grid;
@@ -73,7 +85,9 @@ svg { background: transparent }
 .consent-overlay {
 	position: fixed;
 	inset: 0;
-	background: rgba(15,23,42,0.5);
+	/* fully opaque background so nothing behind is visible */
+	background: var(--bg);
+	background-color: var(--bg);
 	display: flex;
 	align-items: center;
 	justify-content: center;

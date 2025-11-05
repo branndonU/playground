@@ -20,6 +20,7 @@ export default function App() {
 
   return (
     <div className="app">
+      <div className="classification-banner" role="banner">TOP SECRET!</div>
       <h1>Playground</h1>
   <div className="main-grid three-col">
         <aside className="about-card">
