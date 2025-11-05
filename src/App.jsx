@@ -20,7 +20,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <div className="classification-banner" role="banner">TOP SECRET!</div>
+      <div className="classification-banner" role="banner">Awesome Site!</div>
       <h1>Playground</h1>
   <div className="main-grid three-col">
         <aside className="about-card">
@@ -38,17 +38,18 @@ export default function App() {
 
         <main className="center-area">
           <section>
-            <h2>Sankey diagram</h2>
+            <p className="sankey-note"><em>Awesome!</em></p>
+            <h2>Some!</h2>
             {readyToGenerate ? (
-              <SankeyChart csvPath={csvPath} width={800} height={700} stages={stages} filter={{ key: 'AR', value: selectedAR }} />
+              <SankeyChart csvPath={csvPath} width={1100} height={700} maxWidth={1400} stages={stages} filter={{ key: 'AR', value: selectedAR }} />
             ) : (
-              <div style={{ color: '#64748b', fontStyle: 'italic' }}>Select an AR and click Generate to render the Sankey.</div>
+              <div style={{ color: '#64748b', fontStyle: 'italic' }}>Awesome!</div>
             )}
           </section>
         </main>
 
         <aside className="select-card">
-          <h4>Filter & generate</h4>
+          <h4>yes</h4>
           <div style={{ marginTop: 8 }}>
             <DynamicDropdown csvPath={'/Data/Sankey_Input__25_rows_.csv'} keyName={'AR'} onChange={v => setSelectedAR(v)} />
           </div>

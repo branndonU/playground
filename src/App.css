@@ -2,10 +2,24 @@
 .app {
 	min-height: 100vh;
 	padding: 20px;
+	/* make room for the fixed classification banner so content isn't hidden */
+	padding-top: calc(20px + 34px);
 	/* ensure the app container uses the theme background as well */
-	background-color: rgb(58, 56, 56);
+	background-color: rgb(38, 39, 39);
 
-	color: var(--text);
+	/* default text color: make every text white by default */
+	color: #ffffff;
+}
+
+/* Force all text inside the app to white to override inline styles where necessary */
+.app * {
+	color: #ffffff;
+}
+
+/* Make the main title 'Playground' navy blue */
+.app h1 {
+	color: #efeff0 !important; /* navy blue */
+	font-style: italic !important;
 }
 
 h1 { margin: 0 0 0.5rem 0; color: var(--text) }
@@ -13,14 +27,26 @@ p { margin: 0; opacity: 0.95; color: var(--text) }
 
 /* Classification banner shown at top */
 .classification-banner {
-	background: #b91c1c; /* red */
-	color: white;
+	/* make the banner fixed and full-width so it always stretches edge-to-edge */
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 34px; /* skinnier banner */
+	line-height: 30px;
+	background: #7a105a; /* yellow */
+	color: #000; /* black text for contrast */
 	text-align: center;
-	padding: 10px 14px;
-	border-radius: 6px;
+	font-size: 13px; /* slightly smaller text */
+	padding: 0 12px; /* horizontal padding only */
+	border-radius: 0;
 	font-weight: 700;
-	letter-spacing: 0.06em;
-	margin-bottom: 12px;
+	letter-spacing: 0.04em;
+	/* thin black top and bottom borders (use box-sizing so borders sit inside the set height) */
+	box-sizing: border-box;
+	border-top: 2px solid #000;
+	border-bottom: 2px solid #000;
+	z-index: 10001; /* sit above the consent overlay */
 }
 
 /* Layout for main content: left about card and right content area */
@@ -37,7 +63,7 @@ p { margin: 0; opacity: 0.95; color: var(--text) }
 	color: var(--card-text);
 	padding: 16px;
 	border-radius: 8px;
-	box-shadow: 0 2px 8px rgba(3,7,18,0.08);
+	box-shadow: 0 2px 8px rgba(41, 42, 43, 0.08);
 	font-size: 14px;
 	line-height: 1.4;
 }
@@ -68,10 +94,22 @@ p { margin: 0; opacity: 0.95; color: var(--text) }
 .select-card select {
 	width: 100%;
 	padding: 8px 10px;
-	background: rgba(0,0,0,0.06);
-	color: var(--card-text);
+	/* make dropdown background slightly navy and ensure text is readable (black) */
+	background: rgba(3,7,18,0.08) !important;
+	color: #000 !important;
 	border: 1px solid rgba(0,0,0,0.08);
 	border-radius: 6px;
+}
+
+/* Ensure options inside the select are readable and inherit the same background */
+.select-card select option {
+	background: rgba(3,7,18,0.08) !important;
+	color: #000 !important;
+}
+
+/* Slightly darker background on focus to aid accessibility */
+.select-card select:focus {
+	outline: 2px solid rgba(3,7,18,0.12);
 }
 
 .select-card button { cursor: pointer }
@@ -86,8 +124,9 @@ svg { background: transparent }
 	position: fixed;
 	inset: 0;
 	/* fully opaque background so nothing behind is visible */
-	background: var(--bg);
-	background-color: var(--bg);
+	/* dark overlay behind the consent card */
+	background: rgb(45, 46, 48);
+	background-color: rgb(45, 46, 48);
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -107,7 +146,20 @@ svg { background: transparent }
 .consent-card h3 { margin-top: 0 }
 .consent-card p { margin-bottom: 0.75rem }
 
-.consent-actions { margin-top: 12px; display: flex; justify-content: flex-end }
+/* Small italic note above the Sankey diagram */
+.sankey-note {
+	font-style: italic;
+	margin: 0 0 8px 0;
+	font-size: 13px;
+	opacity: 0.95;
+}
+
+.consent-actions { margin-top: 12px; display: flex; justify-content: center }
 .consent-actions .agree {
-	background: #06b6d4; color: #012; border: none; padding: 10px 14px; border-radius: 6px; cursor: pointer
+	background: #06b6d4;
+	color: rgb(45, 46, 48);
+	border: none;
+	padding: 10px 14px;
+	border-radius: 6px;
+	cursor: pointer;
 }

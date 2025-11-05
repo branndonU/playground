@@ -1,4 +1,4 @@
-:root { --bg: #f3f4f6; --card: #374151; --card-text: #ffffff; --text: #0f172a }
+:root { --bg: #f3f4f6; --card: #3d3d3d; --card-text: #ffffff; --text: #0f172a }
 .html-reset, html, body, #root { height: 100%; margin: 0 }
 .html-reset, body { font-family: Inter, system-ui, Arial; background: var(--bg) !important; color: var(--text) }
 

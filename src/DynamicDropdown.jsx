@@ -7,7 +7,7 @@ import * as d3 from 'd3'
 // - keyName: header to extract unique values from (default 'AR')
 // - onChange: function(selected) called when user selects a value
 // - placeholder: optional placeholder text
-export default function DynamicDropdown({ csvPath = '/Data/Sankey_Input__25_rows_.csv', keyName = 'AR', onChange = () => {}, placeholder = 'Select AR' }) {
+export default function DynamicDropdown({ csvPath = '/Data/Sankey_Input__25_rows_.csv', keyName = 'AR', onChange = () => {}, placeholder = 'Yay' }) {
   const [options, setOptions] = useState([])
   const [selected, setSelected] = useState('')
 

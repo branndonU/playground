@@ -80,8 +80,10 @@ function buildSankeyData(rows, stages) {
   return { nodes: nodesArr.map(n => ({ name: n.name })), links: cleanLinks }
 }
 
-export default function SankeyChart({ csvPath = '/Data/sankey_first_year.csv', width = 1000, height = 600, sourceKey = 'Crime_type', targetKey = 'outcome_summary', valueKey = 'index', delimiter = ',', stages = null, filter = null }) {
+export default function SankeyChart({ csvPath = '/Data/sankey_first_year.csv', width = 1000, height = 600, sourceKey = 'Crime_type', targetKey = 'outcome_summary', valueKey = 'index', delimiter = ',', stages = null, filter = null, maxWidth = 1200, maxHeight = 800 }) {
   const ref = useRef(null)
+  const containerRef = useRef(null)
+  const [containerSize, setContainerSize] = useState({ width: width, height: height })
   const [error, setError] = useState(null)
   const [legendItems, setLegendItems] = useState([])
 
@@ -126,7 +128,7 @@ export default function SankeyChart({ csvPath = '/Data/sankey_first_year.csv', w
       if (!graph.links || graph.links.length === 0) {
         throw new Error('No valid links produced from CSV — check headers and numeric values')
       }
-      const svg = d3.select(ref.current)
+  const svg = d3.select(ref.current)
       svg.selectAll('*').remove()
 
       // ensure parent container can position an absolute tooltip
@@ -147,11 +149,18 @@ export default function SankeyChart({ csvPath = '/Data/sankey_first_year.csv', w
         .style('display', 'none')
         .style('z-index', 1000)
 
+  // determine render width/height from observed container size (fallback to props)
+  // clamp to maxWidth/maxHeight to avoid extreme stretching
+  const observedWidth = (containerSize && containerSize.width) || width
+  const observedHeight = (containerSize && containerSize.height) || height
+  const renderWidth = Math.min(observedWidth, maxWidth)
+  const renderHeight = Math.min(observedHeight, maxHeight)
+
       const { nodes, links } = sankey()
         .nodeId(d => (d && d.name != null ? String(d.name) : String(d)))
         .nodeWidth(20)
         .nodePadding(8)
-        .extent([[1, 1], [width - 1, height - 6]])({ nodes: graph.nodes.map(d => Object.assign({}, d)), links: graph.links.map(d => Object.assign({}, d)) })
+        .extent([[1, 1], [renderWidth - 1, renderHeight - 6]])({ nodes: graph.nodes.map(d => Object.assign({}, d)), links: graph.links.map(d => Object.assign({}, d)) })
 
       const color = d3.scaleOrdinal(d3.schemeTableau10)
 
@@ -159,7 +168,7 @@ export default function SankeyChart({ csvPath = '/Data/sankey_first_year.csv', w
       if (stages && Array.isArray(stages) && stages.length > 0) {
         setLegendItems(stages.map(s => ({ name: s, color: color(s) })))
       } else {
-        const sources = nodes.filter(n => n.x0 < width / 2).map(n => n.name)
+        const sources = nodes.filter(n => n.x0 < renderWidth / 2).map(n => n.name)
         const uniqueSources = Array.from(new Set(sources))
         setLegendItems(uniqueSources.map(name => ({ name, color: color(name) })))
       }
@@ -180,7 +189,7 @@ export default function SankeyChart({ csvPath = '/Data/sankey_first_year.csv', w
           const stage = srcName.indexOf(':') > -1 ? srcName.split(':')[0] : srcName
           return color(stage)
         })
-        .attr('stroke-width', d => Math.max(1, d.width))
+  .attr('stroke-width', d => Math.max(1, d.width))
         .on('mousemove', (event, d) => {
           const pct = totalValue ? ((d.value / totalValue) * 100).toFixed(2) : '0'
           const getLabel = node => (node && node.label) ? node.label : (node && node.name && node.name.indexOf(':') > -1 ? node.name.split(':').slice(1).join(':') : (node && node.name))
@@ -224,10 +233,10 @@ export default function SankeyChart({ csvPath = '/Data/sankey_first_year.csv', w
         .attr('stroke', '#000')
 
       node.append('text')
-        .attr('x', d => d.x0 < width / 2 ? (d.x1 - d.x0) + 6 : -6)
+        .attr('x', d => d.x0 < renderWidth / 2 ? (d.x1 - d.x0) + 6 : -6)
         .attr('y', d => (d.y1 - d.y0) / 2)
         .attr('dy', '0.35em')
-        .attr('text-anchor', d => d.x0 < width / 2 ? 'start' : 'end')
+        .attr('text-anchor', d => d.x0 < renderWidth / 2 ? 'start' : 'end')
         .text(d => (d.label ? d.label : (d.name && d.name.indexOf(':') > -1 ? d.name.split(':').slice(1).join(':') : d.name)))
         .style('font-size', '11px')
 
@@ -237,14 +246,35 @@ export default function SankeyChart({ csvPath = '/Data/sankey_first_year.csv', w
     })
 
     return () => { cancelled = true }
-  }, [csvPath, width, height, stages, sourceKey, targetKey, valueKey])
+  }, [csvPath, width, height, stages, sourceKey, targetKey, valueKey, containerSize.width, containerSize.height, maxWidth, maxHeight])
+
+  // ResizeObserver effect: update containerSize when the surrounding container changes
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(entries => {
+      for (let entry of entries) {
+        const cr = entry.contentRect
+        setContainerSize({ width: Math.max(200, Math.floor(cr.width)), height: Math.max(200, Math.floor(cr.height)) })
+      }
+    })
+    ro.observe(el)
+    // set initial size
+    const rect = el.getBoundingClientRect()
+    setContainerSize({ width: Math.max(200, Math.floor(rect.width)), height: Math.max(200, Math.floor(rect.height)) })
+    return () => ro.disconnect()
+  }, [containerRef.current])
 
   if (error) return <div>Error loading Sankey CSV: {error}</div>
 
+  // choose effective svg dimensions from observed container size (fallback to props) and clamp to max
+  const svgWidth = Math.min((containerSize && containerSize.width) || width, maxWidth)
+  const svgHeight = Math.min((containerSize && containerSize.height) || height, maxHeight)
+
   return (
-    <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-      <div style={{ overflow: 'auto' }}>
-        <svg ref={ref} width={width} height={height} />
+    <div style={{ display: 'flex', gap: '1rem', alignItems: 'stretch' }}>
+      <div ref={containerRef} style={{ flex: 1, minWidth: 0, minHeight: Math.min(height, maxHeight), overflow: 'hidden' }}>
+        <svg ref={ref} width={svgWidth} height={svgHeight} />
       </div>
       {legendItems && legendItems.length > 0 && (
         <div className="sankey-legend" style={{ maxWidth: 220 }}>
