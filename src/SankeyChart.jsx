@@ -3,8 +3,42 @@ import * as d3 from 'd3'
 import { sankey, sankeyLinkHorizontal } from 'd3-sankey'
 
 // Simple CSV parser to produce nodes and links for sankey
-function buildSankeyData(rows) {
-  // rows: [{Crime_type, outcome_summary, index}]
+function buildSankeyData(rows, stages) {
+  // rows: array of raw CSV row objects
+  // stages: optional array of column names representing multi-stage flow
+  if (stages && Array.isArray(stages) && stages.length > 1) {
+    // build nodes keyed by "Stage:Value" to keep identical values in different stages separate
+    const nodeMap = new Map()
+    const linkCount = new Map()
+
+    rows.forEach(r => {
+      for (let i = 0; i < stages.length - 1; i++) {
+        const a = stages[i]
+        const b = stages[i + 1]
+        const aval = r[a] == null ? '' : String(r[a]).trim()
+        const bval = r[b] == null ? '' : String(r[b]).trim()
+        const src = aval === '' ? 'Unknown' : aval
+        const tgt = bval === '' ? 'Unknown' : bval
+        const srcId = `${a}:${src}`
+        const tgtId = `${b}:${tgt}`
+
+        if (!nodeMap.has(srcId)) nodeMap.set(srcId, { id: srcId, label: src, stage: a })
+        if (!nodeMap.has(tgtId)) nodeMap.set(tgtId, { id: tgtId, label: tgt, stage: b })
+
+        const key = `${srcId}||${tgtId}`
+        linkCount.set(key, (linkCount.get(key) || 0) + 1)
+      }
+    })
+
+    const nodes = Array.from(nodeMap.values()).map(n => ({ name: n.id, label: n.label, stage: n.stage }))
+    const links = Array.from(linkCount.entries()).map(([k, v]) => {
+      const [s, t] = k.split('||')
+      return { source: s, target: t, value: v }
+    })
+    return { nodes, links }
+  }
+
+  // fallback: two-column CSV mapping (source/target/value)
   const nodeMap = new Map()
   const links = []
 
@@ -17,13 +51,13 @@ function buildSankeyData(rows) {
     links.push({ source, target, value })
   })
 
-  const nodes = Array.from(nodeMap.values())
+  const nodesArr = Array.from(nodeMap.values())
   // map names to indices
-  const nameToIndex = new Map(nodes.map((n, i) => [n.name, i]))
+  const nameToIndex = new Map(nodesArr.map((n, i) => [n.name, i]))
   // ensure an 'Unknown' node exists for remapping missing names
   if (!nameToIndex.has('Unknown')) {
-    const unknownIndex = nodes.length
-    nodes.push({ name: 'Unknown' })
+    const unknownIndex = nodesArr.length
+    nodesArr.push({ name: 'Unknown' })
     nameToIndex.set('Unknown', unknownIndex)
   }
   // produce links using names so they match sankey.nodeId(d => d.name)
@@ -43,10 +77,10 @@ function buildSankeyData(rows) {
     console.warn('Sample problematic rows (up to 5):', sample)
   }
   const cleanLinks = cleaned.map(({ source, target, value }) => ({ source, target, value }))
-  return { nodes: nodes.map(n => ({ name: n.name })), links: cleanLinks }
+  return { nodes: nodesArr.map(n => ({ name: n.name })), links: cleanLinks }
 }
 
-export default function SankeyChart({ csvPath = '/Data/sankey_first_year.csv', width = 1000, height = 600, sourceKey = 'Crime_type', targetKey = 'outcome_summary', valueKey = 'index', delimiter = ',' }) {
+export default function SankeyChart({ csvPath = '/Data/sankey_first_year.csv', width = 1000, height = 600, sourceKey = 'Crime_type', targetKey = 'outcome_summary', valueKey = 'index', delimiter = ',', stages = null, filter = null }) {
   const ref = useRef(null)
   const [error, setError] = useState(null)
   const [legendItems, setLegendItems] = useState([])
@@ -56,13 +90,33 @@ export default function SankeyChart({ csvPath = '/Data/sankey_first_year.csv', w
     // try loading CSV; if fetch fails, this will go to catch and set a helpful error
     d3.csv(csvPath).then(data => {
       if (cancelled) return
-  // map incoming CSV rows using configured keys
-  const raw = data.map(d => ({ Crime_type: d[sourceKey], outcome_summary: d[targetKey], index: +d[valueKey] }))
+      // map incoming CSV rows. If stages is provided we need raw rows keyed by header names
+      let raw
+      if (stages && Array.isArray(stages) && stages.length > 1) {
+        raw = data.map(d => Object.assign({}, d))
+      } else {
+        raw = data.map(d => ({ Crime_type: d[sourceKey], outcome_summary: d[targetKey], index: +d[valueKey] }))
+      }
+
+      // apply optional filter (e.g. { key: 'AR', value: 'T828' }) to restrict rows
+      if (filter && filter.key && (filter.value || filter.value === 0)) {
+        const fk = String(filter.key)
+        const fv = String(filter.value)
+        const beforeCount = raw.length
+        raw = raw.filter(r => {
+          try {
+            return String(r[fk] == null ? '' : r[fk]).trim() === fv.trim()
+          } catch (err) {
+            return false
+          }
+        })
+        console.debug(`SankeyChart: filtered rows by ${fk}=${fv}: ${beforeCount} -> ${raw.length}`)
+      }
       // defensive: ensure we actually have rows
       if (!raw || raw.length === 0) {
         throw new Error(`CSV loaded but contains no rows (path: ${csvPath})`)
       }
-      const graph = buildSankeyData(raw)
+  const graph = buildSankeyData(raw, stages)
       // debug: log small sample to help diagnose missing node issues
       console.debug('Sankey graph nodes:', graph.nodes.length)
       console.debug('Sankey graph links:', graph.links.length)
@@ -99,16 +153,19 @@ export default function SankeyChart({ csvPath = '/Data/sankey_first_year.csv', w
         .nodePadding(8)
         .extent([[1, 1], [width - 1, height - 6]])({ nodes: graph.nodes.map(d => Object.assign({}, d)), links: graph.links.map(d => Object.assign({}, d)) })
 
-  const color = d3.scaleOrdinal(d3.schemeTableau10)
+      const color = d3.scaleOrdinal(d3.schemeTableau10)
 
-  // build legend items from source crime types (original nodeMap keys that are crime types)
-  // We can take nodes that appear on the left column (x0 small) as sources; otherwise use unique first N nodes
-  const sources = nodes.filter(n => n.x0 < width / 2).map(n => n.name)
-  const uniqueSources = Array.from(new Set(sources))
-  setLegendItems(uniqueSources.map(name => ({ name, color: color(name) })))
+      // build legend items. If stages are provided, show stage swatches; otherwise derive from left-side nodes
+      if (stages && Array.isArray(stages) && stages.length > 0) {
+        setLegendItems(stages.map(s => ({ name: s, color: color(s) })))
+      } else {
+        const sources = nodes.filter(n => n.x0 < width / 2).map(n => n.name)
+        const uniqueSources = Array.from(new Set(sources))
+        setLegendItems(uniqueSources.map(name => ({ name, color: color(name) })))
+      }
 
-  // compute total for percent calculations
-  const totalValue = d3.sum(graph.links, l => l.value)
+      // compute total for percent calculations
+      const totalValue = d3.sum(graph.links, l => l.value)
 
       // links
       const linkPaths = svg.append('g')
@@ -118,12 +175,19 @@ export default function SankeyChart({ csvPath = '/Data/sankey_first_year.csv', w
         .data(links)
         .join('path')
         .attr('d', sankeyLinkHorizontal())
-        .attr('stroke', d => color(d.source.name))
+        .attr('stroke', d => {
+          const srcName = d && d.source && d.source.name ? d.source.name : ''
+          const stage = srcName.indexOf(':') > -1 ? srcName.split(':')[0] : srcName
+          return color(stage)
+        })
         .attr('stroke-width', d => Math.max(1, d.width))
         .on('mousemove', (event, d) => {
           const pct = totalValue ? ((d.value / totalValue) * 100).toFixed(2) : '0'
+          const getLabel = node => (node && node.label) ? node.label : (node && node.name && node.name.indexOf(':') > -1 ? node.name.split(':').slice(1).join(':') : (node && node.name))
+          const sLabel = getLabel(d.source)
+          const tLabel = getLabel(d.target)
           tooltip.style('display', 'block')
-            .html(`<strong>${d.source.name} → ${d.target.name}</strong><div>Value: ${d.value}</div><div>${pct}% of total</div>`)
+            .html(`<strong>${sLabel} → ${tLabel}</strong><div>Value: ${d.value}</div><div>${pct}% of total</div>`)
             .style('left', (event.offsetX + 12) + 'px')
             .style('top', (event.offsetY + 12) + 'px')
         })
@@ -141,8 +205,9 @@ export default function SankeyChart({ csvPath = '/Data/sankey_first_year.csv', w
           const outgoing = d.sourceLinks ? d3.sum(d.sourceLinks, l => l.value) : 0
           const nodeTotal = incoming + outgoing
           const pct = totalValue ? ((nodeTotal / totalValue) * 100).toFixed(2) : '0'
+          const getLabel = node => (node && node.label) ? node.label : (node && node.name && node.name.indexOf(':') > -1 ? node.name.split(':').slice(1).join(':') : (node && node.name))
           tooltip.style('display', 'block')
-            .html(`<strong>${d.name}</strong><div>Total: ${nodeTotal}</div><div>${pct}% of total</div>`)
+            .html(`<strong>${getLabel(d)}</strong><div>Total: ${nodeTotal}</div><div>${pct}% of total</div>`)
             .style('left', (event.offsetX + 12) + 'px')
             .style('top', (event.offsetY + 12) + 'px')
         })
@@ -151,7 +216,11 @@ export default function SankeyChart({ csvPath = '/Data/sankey_first_year.csv', w
       node.append('rect')
         .attr('height', d => Math.max(1, d.y1 - d.y0))
         .attr('width', d => Math.max(1, d.x1 - d.x0))
-        .attr('fill', d => color(d.name))
+        .attr('fill', d => {
+          const nm = d && d.name ? d.name : ''
+          const stage = nm.indexOf(':') > -1 ? nm.split(':')[0] : nm
+          return color(stage)
+        })
         .attr('stroke', '#000')
 
       node.append('text')
@@ -159,7 +228,7 @@ export default function SankeyChart({ csvPath = '/Data/sankey_first_year.csv', w
         .attr('y', d => (d.y1 - d.y0) / 2)
         .attr('dy', '0.35em')
         .attr('text-anchor', d => d.x0 < width / 2 ? 'start' : 'end')
-        .text(d => d.name)
+        .text(d => (d.label ? d.label : (d.name && d.name.indexOf(':') > -1 ? d.name.split(':').slice(1).join(':') : d.name)))
         .style('font-size', '11px')
 
     }).catch(err => {
@@ -168,7 +237,7 @@ export default function SankeyChart({ csvPath = '/Data/sankey_first_year.csv', w
     })
 
     return () => { cancelled = true }
-  }, [csvPath, width, height])
+  }, [csvPath, width, height, stages, sourceKey, targetKey, valueKey])
 
   if (error) return <div>Error loading Sankey CSV: {error}</div>
 

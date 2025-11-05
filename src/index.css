@@ -1,10 +1,16 @@
-:root { --bg: #0f172a; --card: #0b1220; --text: #e6eef8 }
-html, body, #root { height: 100%; margin: 0 }
-body { font-family: Inter, system-ui, Arial; background: linear-gradient(180deg,#071023 0%,#0b1220 100%); color: var(--text) }
+:root { --bg: #f3f4f6; --card: #374151; --card-text: #ffffff; --text: #0f172a }
+.html-reset, html, body, #root { height: 100%; margin: 0 }
+.html-reset, body { font-family: Inter, system-ui, Arial; background: var(--bg) !important; color: var(--text) }
+
+/* Force full-viewport background on html/body/#root in case other rules override it */
+html, body, #root {
+	background: var(--bg) !important;
+	background-color: var(--bg) !important;
+}
 .app { padding: 3rem; }
-.card { margin-top: 1rem; }
+.card { margin-top: 1rem; background: var(--card); color: var(--card-text); padding: 12px; border-radius: 8px }
 button { background: #7c3aed; color: white; border: none; padding: 0.6rem 1rem; border-radius: 6px }
 .sankey-tooltip { box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
 
-.sankey-legend { background: rgba(255,255,255,0.03); padding: 8px; border-radius: 6px; color: var(--text); }
+.sankey-legend { background: var(--card); padding: 8px; border-radius: 6px; color: var(--card-text); }
 .sankey-legend h4 { margin: 0 0 6px 0; font-size: 14px }

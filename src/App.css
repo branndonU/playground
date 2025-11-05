@@ -1,2 +1,99 @@
-h1 { margin: 0 0 0.5rem 0 }
-p { margin: 0; opacity: 0.85 }
+/* Global app background and typography */
+.app {
+	min-height: 100vh;
+	padding: 20px;
+	/* ensure the app container uses the theme background as well */
+	background-color: rgb(58, 56, 56);
+
+	color: var(--text);
+}
+
+h1 { margin: 0 0 0.5rem 0; color: var(--text) }
+p { margin: 0; opacity: 0.95; color: var(--text) }
+
+/* Layout for main content: left about card and right content area */
+.main-grid {
+	display: grid;
+	grid-template-columns: 280px 1fr 320px;
+	gap: 1rem;
+	margin-top: 1.25rem;
+	align-items: start;
+}
+
+.about-card {
+	background: var(--card); /* darker grey card */
+	color: var(--card-text);
+	padding: 16px;
+	border-radius: 8px;
+	box-shadow: 0 2px 8px rgba(3,7,18,0.08);
+	font-size: 14px;
+	line-height: 1.4;
+}
+
+.about-card h3 { margin-top: 0 }
+
+.center-area { background: var(--card); padding: 8px; border-radius: 6px; color: var(--card-text) }
+
+.select-card {
+	background: var(--card);
+	padding: 14px;
+	border-radius: 8px;
+	box-shadow: 0 2px 6px rgba(2,6,23,0.06);
+	border: 1px solid rgba(0,0,0,0.08);
+	color: var(--card-text);
+}
+
+.select-card h4 { margin: 0 0 8px 0 }
+
+@media (max-width: 1000px) {
+	.main-grid { grid-template-columns: 1fr }
+	.about-card { order: 0 }
+	.select-card { order: 2 }
+	.center-area { order: 1 }
+}
+
+/* Inputs and buttons in dark theme */
+.select-card select {
+	width: 100%;
+	padding: 8px 10px;
+	background: rgba(0,0,0,0.06);
+	color: var(--card-text);
+	border: 1px solid rgba(0,0,0,0.08);
+	border-radius: 6px;
+}
+
+.select-card button { cursor: pointer }
+
+/* reset-consent removed */
+
+/* Make sankey svg background transparent so navy shows through */
+svg { background: transparent }
+
+/* Consent overlay styles */
+.consent-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(15,23,42,0.5);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 9999;
+}
+
+.consent-card {
+	background: var(--card);
+	color: var(--card-text);
+	padding: 24px;
+	border-radius: 10px;
+	width: 520px;
+	max-width: calc(100% - 40px);
+	box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+}
+
+.consent-card h3 { margin-top: 0 }
+.consent-card p { margin-bottom: 0.75rem }
+
+.consent-actions { margin-top: 12px; display: flex; justify-content: flex-end }
+.consent-actions .agree {
+	background: #06b6d4; color: #012; border: none; padding: 10px 14px; border-radius: 6px; cursor: pointer
+}
