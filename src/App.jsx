@@ -8,6 +8,8 @@ export default function App() {
   const [readyToGenerate, setReadyToGenerate] = useState(false)
   const [stages, setStages] = useState(null)
   const [selectedAR, setSelectedAR] = useState('')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
   // always ask on refresh: do not persist consent
   const [consentGiven, setConsentGiven] = useState(false)
 
@@ -38,12 +40,12 @@ export default function App() {
 
         <main className="center-area">
           <section>
-            <p className="sankey-note"><em>Awesome!</em></p>
-            <h2>Some!</h2>
+            <p className="sankey-note"><em>the company only stores 45 days worth of stuff</em></p>
+            <h2>Sankey diagram</h2>
             {readyToGenerate ? (
-              <SankeyChart csvPath={csvPath} width={1100} height={700} maxWidth={1400} stages={stages} filter={{ key: 'AR', value: selectedAR }} />
+              <SankeyChart csvPath={csvPath} width={1100} height={700} maxWidth={1400} stages={stages} filter={{ key: 'AR', value: selectedAR, dateRange: { start: startDate, end: endDate } }} />
             ) : (
-              <div style={{ color: '#64748b', fontStyle: 'italic' }}>Awesome!</div>
+              <div style={{ color: '#64748b', fontStyle: 'italic' }}>Select an AR and click Generate to render the Sankey.</div>
             )}
           </section>
         </main>
@@ -53,8 +55,18 @@ export default function App() {
           <div style={{ marginTop: 8 }}>
             <DynamicDropdown csvPath={'/Data/Sankey_Input__25_rows_.csv'} keyName={'AR'} onChange={v => setSelectedAR(v)} />
           </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <label style={{ fontSize: 12, marginBottom: 4 }}>Start date</label>
+              <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <label style={{ fontSize: 12, marginBottom: 4 }}>End date</label>
+              <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
+            </div>
+          </div>
           <div style={{ marginTop: 12 }}>
-            <button onClick={handleGenerate} disabled={!selectedAR} style={{ width: '100%', background: selectedAR ? '#16a34a' : '#ef4444', color: 'white', padding: '8px 12px', border: 'none', borderRadius: 6 }}>
+            <button onClick={handleGenerate} disabled={!selectedAR || !startDate || !endDate || new Date(startDate) > new Date(endDate)} style={{ width: '100%', background: (selectedAR && startDate && endDate && !(new Date(startDate) > new Date(endDate))) ? '#16a34a' : '#ef4444', color: 'white', padding: '8px 12px', border: 'none', borderRadius: 6 }}>
               Generate
             </button>
           </div>

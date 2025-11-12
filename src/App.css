@@ -101,6 +101,29 @@ p { margin: 0; opacity: 0.95; color: var(--text) }
 	border-radius: 6px;
 }
 
+/* Date input readability inside the select card: override global white text */
+.select-card input[type="date"],
+.select-card input[type="text"] {
+	background: #ffffff !important;
+	color: #000000 !important;
+	border: 1px solid rgba(0,0,0,0.12);
+	padding: 6px 8px;
+	border-radius: 6px;
+	font-size: 13px;
+}
+
+/* WebKit-specific controls for date inputs (Chrome, Edge, Safari) */
+.select-card input[type="date"]::-webkit-datetime-edit, 
+.select-card input[type="date"]::-webkit-datetime-edit-field,
+.select-card input[type="date"]::-webkit-datetime-edit-text {
+	color: #000 !important;
+}
+
+/* Ensure calendar icon and placeholder text are visible */
+.select-card input[type="date"]::-webkit-calendar-picker-indicator {
+	filter: none;
+}
+
 /* Ensure options inside the select are readable and inherit the same background */
 .select-card select option {
 	background: rgba(3,7,18,0.08) !important;

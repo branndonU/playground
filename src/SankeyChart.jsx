@@ -114,6 +114,27 @@ export default function SankeyChart({ csvPath = '/Data/sankey_first_year.csv', w
         })
         console.debug(`SankeyChart: filtered rows by ${fk}=${fv}: ${beforeCount} -> ${raw.length}`)
       }
+
+      // optional dateRange filter: expect filter.dateRange = { start: 'YYYY-MM-DD', end: 'YYYY-MM-DD' }
+      if (filter && filter.dateRange && filter.dateRange.start && filter.dateRange.end) {
+        const s = new Date(filter.dateRange.start)
+        const e = new Date(filter.dateRange.end)
+        const beforeCount = raw.length
+        raw = raw.filter(r => {
+          try {
+            const rs = r.START_DATE ? new Date(r.START_DATE) : null
+            const re = r.END_DATE ? new Date(r.END_DATE) : null
+            if (!rs || !re) return false
+            // include rows whose date range has a strict overlap with the selected window
+            // require at least one day in common (exclude ranges that only touch at endpoints)
+            // overlap if rowStart < selectedEnd && rowEnd > selectedStart
+            return rs < e && re > s
+          } catch (err) {
+            return false
+          }
+        })
+        console.debug(`SankeyChart: filtered rows by dateRange ${filter.dateRange.start} -> ${filter.dateRange.end}: ${beforeCount} -> ${raw.length}`)
+      }
       // defensive: ensure we actually have rows
       if (!raw || raw.length === 0) {
         throw new Error(`CSV loaded but contains no rows (path: ${csvPath})`)
